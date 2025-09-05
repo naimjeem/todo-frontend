@@ -41,18 +41,17 @@ REACT_APP_API_URL=http://localhost:5000
 
 ## 🌿 Git Branching Strategy
 
-This project follows the **Git Flow** branching strategy:
+This project follows the **Trunk-Based Development** strategy:
 
-### Main Branches
+### Main Branch
 
-- **`main`**: Production-ready code
-- **`develop`**: Integration branch for features
+- **`main`**: Single source of truth - always deployable and production-ready
 
-### Supporting Branches
+### Short-Lived Feature Branches
 
-- **`feature/*`**: New features (branch from `develop`)
-- **`release/*`**: Release preparation (branch from `develop`)
-- **`hotfix/*`**: Critical bug fixes (branch from `main`)
+- **`feature/*`**: Short-lived branches for new features (max 1-2 days)
+- **`bugfix/*`**: Short-lived branches for bug fixes (max 1 day)
+- **`hotfix/*`**: Critical production fixes (immediate merge)
 
 ### Branch Naming Conventions
 
@@ -61,8 +60,15 @@ feature/add-task-priority
 feature/implement-dark-mode
 bugfix/fix-task-editing
 hotfix/critical-ui-bug
-release/v1.2.0
 ```
+
+### Key Principles
+
+- **Always deployable**: `main` branch is always in a deployable state
+- **Short-lived branches**: Feature branches live for maximum 1-2 days
+- **Small commits**: Frequent, small commits to `main`
+- **Feature flags**: Use feature flags for incomplete features
+- **Continuous integration**: Every commit triggers CI/CD pipeline
 
 ## 📝 Commit Message Conventions
 
@@ -103,33 +109,47 @@ Use `!` after type/scope to indicate breaking changes:
 feat(api)!: change task data structure
 ```
 
-## 🔄 Workflow Example
+## 🔄 Trunk-Based Workflow Example
 
-1. **Create feature branch**:
+1. **Start from main**:
 ```bash
-git checkout develop
-git pull origin develop
+git checkout main
+git pull origin main
 git checkout -b feature/add-task-priority
 ```
 
-2. **Make changes and commit**:
+2. **Make small, focused changes**:
 ```bash
 git add .
 git commit -m "feat(ui): add priority field to task form"
-git commit -m "feat(components): implement priority-based task sorting"
 ```
 
 3. **Push and create PR**:
 ```bash
 git push origin feature/add-task-priority
-# Create Pull Request to develop
+# Create Pull Request to main (with feature flag if incomplete)
 ```
 
-4. **Merge and cleanup**:
+4. **Merge quickly and cleanup**:
 ```bash
-git checkout develop
-git pull origin develop
+git checkout main
+git pull origin main
 git branch -d feature/add-task-priority
+```
+
+### Feature Flag Example
+
+For incomplete features, use feature flags:
+
+```javascript
+// In your component
+const ENABLE_PRIORITY_FEATURE = process.env.REACT_APP_ENABLE_PRIORITY === 'true';
+
+if (ENABLE_PRIORITY_FEATURE) {
+  // Show priority feature
+} else {
+  // Hide or show placeholder
+}
 ```
 
 ## 🧪 Testing
