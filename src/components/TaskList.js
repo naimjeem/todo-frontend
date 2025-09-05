@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { isFeatureEnabled, FEATURE_FLAGS } from '../utils/featureFlags';
 
 const TaskList = ({ tasks, onToggleTask, onDeleteTask }) => {
   const [editingId, setEditingId] = useState(null);
@@ -41,6 +42,43 @@ const TaskList = ({ tasks, onToggleTask, onDeleteTask }) => {
   const completedTasks = tasks.filter(task => task.completed).length;
   const totalTasks = tasks.length;
 
+  // Sort tasks by priority if feature is enabled
+  const sortedTasks = isFeatureEnabled(FEATURE_FLAGS.PRIORITY_TASKS) 
+    ? [...tasks].sort((a, b) => {
+        const priorityOrder = { high: 3, medium: 2, low: 1 };
+        const aPriority = priorityOrder[a.priority] || 2;
+        const bPriority = priorityOrder[b.priority] || 2;
+        return bPriority - aPriority; // High priority first
+      })
+    : tasks;
+
+  // Priority indicator component
+  const PriorityIndicator = ({ priority }) => {
+    if (!isFeatureEnabled(FEATURE_FLAGS.PRIORITY_TASKS)) return null;
+    
+    const priorityConfig = {
+      high: { emoji: '🔴', label: 'High', color: '#dc3545' },
+      medium: { emoji: '🟡', label: 'Medium', color: '#ffc107' },
+      low: { emoji: '🟢', label: 'Low', color: '#28a745' }
+    };
+    
+    const config = priorityConfig[priority] || priorityConfig.medium;
+    
+    return (
+      <span 
+        className="priority-indicator"
+        title={`Priority: ${config.label}`}
+        style={{ 
+          marginRight: '8px',
+          fontSize: '14px',
+          color: config.color
+        }}
+      >
+        {config.emoji}
+      </span>
+    );
+  };
+
   if (tasks.length === 0) {
     return (
       <div className="task-list">
@@ -70,9 +108,31 @@ const TaskList = ({ tasks, onToggleTask, onDeleteTask }) => {
           <div className="stat-number">{totalTasks - completedTasks}</div>
           <div className="stat-label">Remaining</div>
         </div>
+        {isFeatureEnabled(FEATURE_FLAGS.PRIORITY_TASKS) && (
+          <>
+            <div className="stat-item">
+              <div className="stat-number" style={{ color: '#dc3545' }}>
+                {tasks.filter(task => task.priority === 'high').length}
+              </div>
+              <div className="stat-label">High Priority</div>
+            </div>
+            <div className="stat-item">
+              <div className="stat-number" style={{ color: '#ffc107' }}>
+                {tasks.filter(task => task.priority === 'medium').length}
+              </div>
+              <div className="stat-label">Medium Priority</div>
+            </div>
+            <div className="stat-item">
+              <div className="stat-number" style={{ color: '#28a745' }}>
+                {tasks.filter(task => task.priority === 'low').length}
+              </div>
+              <div className="stat-label">Low Priority</div>
+            </div>
+          </>
+        )}
       </div>
 
-      {tasks.map(task => (
+      {sortedTasks.map(task => (
         <div key={task.id} className="task-item">
           <input
             type="checkbox"
@@ -112,6 +172,7 @@ const TaskList = ({ tasks, onToggleTask, onDeleteTask }) => {
             </div>
           ) : (
             <>
+              <PriorityIndicator priority={task.priority} />
               <span className={`task-text ${task.completed ? 'completed' : ''}`}>
                 {task.text}
               </span>
